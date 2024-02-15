@@ -1,8 +1,9 @@
 import { orderRouter } from "./order.route";
+import { userRouter } from "./user.route";
 
-export function routes(app: any) {
+import { Express } from "express";
 
-    app.use("/order", orderRouter);
-  
+export function routes(app: Express) {
+  app.use("/order", orderRouter);
+  app.use("/", userRouter);
 }
-
