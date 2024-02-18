@@ -6,30 +6,70 @@ import { decryptPassword, encryptedPassword } from "../utils/encryption";
 
 import jwt, { JwtPayload } from "jsonwebtoken";
 import dotenv from "dotenv";
+import { QueryResult } from "pg";
+import type { User } from "../models/user.model";
 
 dotenv.config();
 
-const SECRET = process.env.SECRET;
+const SECRET: string = process.env.SECRET as string;
+
+const securityFieldsUser = (response: QueryResult<User>): User => {
+  const user: User = {
+    id_usuario: response.rows[0].id_usuario,
+    username: response.rows[0].username,
+    nome: response.rows[0].nome,
+    email: response.rows[0].email,
+  };
+
+  return user;
+};
 
 export const createUser = async (req: Request, res: Response) => {
   try {
-    const { email, username, name, password } = req.body;
+    const { email, username, name, password } = req.body as {
+      email: string;
+      username: string;
+      name: string;
+      password: string;
+    };
 
-    if (!(email || username || password))
-      throw new Error("Todos os campos são obrigatórios.");
+    if (!(email && username && password))
+      throw new Error(
+        "Os campos de email, nome de usuário e senha são obrigatórios."
+      );
 
     const query = `INSERT INTO usuarios (id_usuario, email, username, nome, senha) VALUES ($1, $2, $3, $4, $5) RETURNING *`;
 
-    const passwordHash = await encryptedPassword(password);
-    const id = uuid();
+    const passwordHash: string = await encryptedPassword(password);
+    const id: string = uuid();
 
-    const user = await pool.query(query, [
+    // verificar se o user ja existe com esse email
+    const emailExists: QueryResult<User> = await pool.query(
+      "SELECT * FROM usuarios ua WHERE ua.email = $1;",
+      [email]
+    );
+
+    if (!!emailExists.rowCount)
+      throw new Error("Esse email já está sendo utilizado por uma conta.");
+
+    // verificar se o user ja existe com esse username
+    const usernameExists: QueryResult<User> = await pool.query(
+      "SELECT * FROM usuarios ua WHERE ua.username = $1;",
+      [username]
+    );
+
+    if (!!usernameExists.rowCount)
+      throw new Error("Esse username já está sendo utilizado por uma conta.");
+
+    const response: QueryResult<User> = await pool.query(query, [
       id,
       email,
       username,
       name,
       passwordHash,
     ]);
+
+    const user: User = securityFieldsUser(response);
 
     res.status(201).json({ ...user });
   } catch (error: any) {
@@ -39,14 +79,16 @@ export const createUser = async (req: Request, res: Response) => {
 
 export const getUserByUsername = async (req: Request, res: Response) => {
   try {
-    const { username } = req.params;
+    const { username } = req.params as { username: string };
 
     const query = "SELECT * FROM usuarios u WHERE u.username = $1;";
-    const user = await pool.query(query, [username]);
+    const response = await pool.query(query, [username]);
 
-    if (user.rowCount == 0) throw new Error("Usuário não encontrado!");
+    if (!!!response.rowCount) throw new Error("Usuário não encontrado!");
 
-    res.status(201).json({ ...user });
+    const user: User = securityFieldsUser(response);
+
+    res.json({ ...user });
   } catch (error: any) {
     return res.status(500).json({ mensagem: error.message });
   }
@@ -54,14 +96,16 @@ export const getUserByUsername = async (req: Request, res: Response) => {
 
 export const validateToken = async (req: Request, res: Response) => {
   try {
-    const token = req.headers.authorization!;
+    const token: string = req.headers.authorization!;
 
-    const decoded = jwt.verify(token, SECRET!);
+    const decoded: JwtPayload | string = jwt.verify(token, SECRET!);
 
     const query = "SELECT * FROM usuarios u WHERE u.email = $1;";
-    const user = await pool.query(query, [(decoded as JwtPayload).email]);
+    const response = await pool.query(query, [(decoded as JwtPayload).email]);
 
-    if (user.rowCount == 0) throw new Error("Usuário não encontrado!");
+    if (!!!response.rowCount) throw new Error("Usuário não encontrado!");
+
+    const user: User = securityFieldsUser(response);
 
     res.status(200).json({ ...user });
   } catch (error: any) {
@@ -71,26 +115,28 @@ export const validateToken = async (req: Request, res: Response) => {
 
 export const createToken = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body as { email: string; password: string };
 
     const query = "SELECT * FROM usuarios u WHERE u.email = $1;";
-    const user = await pool.query(query, [email]);
+    const response = await pool.query(query, [email]);
 
-    if (user.rowCount == 0) throw new Error("Usuário não encontrado!");
+    if (!!!response.rowCount) throw new Error("Usuário não encontrado!");
 
-    const validatedPassword = await decryptPassword(
+    const userPassword: string = response.rows[0].senha!;
+
+    const validatedPassword: boolean = await decryptPassword(
       password,
-      user.rows[0].password
+      userPassword
     );
 
     if (!validatedPassword)
       throw new Error("A senha ou login estão incorretos. Tente novamente.");
 
-    const token = jwt.sign(
+    const token: string = jwt.sign(
       {
         email: email.toLocaleLowerCase(),
-        username: user.rows[0].username,
-        user_id: user.rows[0].user_id,
+        username: response.rows[0].username,
+        id_usuario: response.rows[0].id_usuario,
       },
       SECRET!,
       {

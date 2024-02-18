@@ -8,7 +8,6 @@ import {
   validateToken,
 } from "../controllers/user.controller";
 
-import { auth } from "../middlewares/auth.middleware";
 export const userRouter = express();
 
 userRouter
@@ -19,12 +18,12 @@ userRouter
   .route("/login")
   .get((req: Request, res: Response) => validateToken(req, res));
 
-userRouter.use(auth)
+userRouter
+  .route("/token")
+  .post((req: Request, res: Response) => createToken(req, res));
 
 userRouter
   .route("/user/:username")
   .get((req: Request, res: Response) => getUserByUsername(req, res));
 
-userRouter
-  .route("/token")
-  .post((req: Request, res: Response) => createToken(req, res));
+
