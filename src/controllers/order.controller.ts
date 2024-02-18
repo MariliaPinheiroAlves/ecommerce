@@ -3,7 +3,7 @@ import { pool } from '../config/connection';
 import { Order } from '../models/order';
 
 export const getAllOrdersByUserID = async (req: Request<{ userId: string }>, res: Response<any>) => {
-  const userId :number = parseInt(req.params.userId);
+  const userId :string = req.params.userId;
 
   try {
     if (!userId) {

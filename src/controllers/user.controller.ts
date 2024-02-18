@@ -15,9 +15,9 @@ const SECRET: string = process.env.SECRET as string;
 
 const securityFieldsUser = (response: QueryResult<User>): User => {
   const user: User = {
-    user_id: response.rows[0].user_id,
+    id_usuario: response.rows[0].id_usuario,
     username: response.rows[0].username,
-    name: response.rows[0].name,
+    nome: response.rows[0].nome,
     email: response.rows[0].email,
   };
 
@@ -38,15 +38,14 @@ export const createUser = async (req: Request, res: Response) => {
         "Os campos de email, nome de usuário e senha são obrigatórios."
       );
 
-    const query: string =
-      "INSERT INTO user_account (user_id, email, username, name, password) VALUES ($1, $2, $3, $4, $5) RETURNING *";
+    const query = `INSERT INTO usuarios (id_usuario, email, username, nome, senha) VALUES ($1, $2, $3, $4, $5) RETURNING *`;
 
     const passwordHash: string = await encryptedPassword(password);
     const id: string = uuid();
 
     // verificar se o user ja existe com esse email
     const emailExists: QueryResult<User> = await pool.query(
-      "SELECT * FROM user_account ua WHERE ua.email = $1;",
+      "SELECT * FROM usuarios ua WHERE ua.email = $1;",
       [email]
     );
 
@@ -55,7 +54,7 @@ export const createUser = async (req: Request, res: Response) => {
 
     // verificar se o user ja existe com esse username
     const usernameExists: QueryResult<User> = await pool.query(
-      "SELECT * FROM user_account ua WHERE ua.username = $1;",
+      "SELECT * FROM usuarios ua WHERE ua.username = $1;",
       [username]
     );
 
@@ -82,15 +81,14 @@ export const getUserByUsername = async (req: Request, res: Response) => {
   try {
     const { username } = req.params as { username: string };
 
-    const query: string =
-      "SELECT * FROM user_account ua WHERE ua.username = $1;";
-    const response: QueryResult<User> = await pool.query(query, [username]);
+    const query = "SELECT * FROM usuarios u WHERE u.username = $1;";
+    const response = await pool.query(query, [username]);
 
     if (!!!response.rowCount) throw new Error("Usuário não encontrado!");
 
     const user: User = securityFieldsUser(response);
 
-    res.status(201).json({ ...user });
+    res.json({ ...user });
   } catch (error: any) {
     return res.status(500).json({ mensagem: error.message });
   }
@@ -102,10 +100,8 @@ export const validateToken = async (req: Request, res: Response) => {
 
     const decoded: JwtPayload | string = jwt.verify(token, SECRET!);
 
-    const query: string = "SELECT * FROM user_account ua WHERE ua.email = $1;";
-    const response: QueryResult<User> = await pool.query(query, [
-      (decoded as JwtPayload).email,
-    ]);
+    const query = "SELECT * FROM usuarios u WHERE u.email = $1;";
+    const response = await pool.query(query, [(decoded as JwtPayload).email]);
 
     if (!!!response.rowCount) throw new Error("Usuário não encontrado!");
 
@@ -121,12 +117,12 @@ export const createToken = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body as { email: string; password: string };
 
-    const query: string = "SELECT * FROM user_account ua WHERE ua.email = $1;";
-    const response: QueryResult<User> = await pool.query(query, [email]);
+    const query = "SELECT * FROM usuarios u WHERE u.email = $1;";
+    const response = await pool.query(query, [email]);
 
     if (!!!response.rowCount) throw new Error("Usuário não encontrado!");
 
-    const userPassword: string = response.rows[0].password!;
+    const userPassword: string = response.rows[0].senha!;
 
     const validatedPassword: boolean = await decryptPassword(
       password,
@@ -140,7 +136,7 @@ export const createToken = async (req: Request, res: Response) => {
       {
         email: email.toLocaleLowerCase(),
         username: response.rows[0].username,
-        user_id: response.rows[0].user_id,
+        id_usuario: response.rows[0].id_usuario,
       },
       SECRET!,
       {
