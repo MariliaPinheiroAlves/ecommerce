@@ -18,7 +18,7 @@ export const createUser = async (req: Request, res: Response) => {
     if (!(email || username || password))
       throw new Error("Todos os campos são obrigatórios.");
 
-    const query = `INSERT INTO users (user_id, email, username, name, password) VALUES ($1, $2, $3, $4, $5) RETURNING *`;
+    const query = `INSERT INTO usuarios (id_usuario, email, username, nome, senha) VALUES ($1, $2, $3, $4, $5) RETURNING *`;
 
     const passwordHash = await encryptedPassword(password);
     const id = uuid();
@@ -41,7 +41,7 @@ export const getUserByUsername = async (req: Request, res: Response) => {
   try {
     const { username } = req.params;
 
-    const query = "SELECT * FROM users u WHERE u.username = $1;";
+    const query = "SELECT * FROM usuarios u WHERE u.username = $1;";
     const user = await pool.query(query, [username]);
 
     if (user.rowCount == 0) throw new Error("Usuário não encontrado!");
@@ -58,7 +58,7 @@ export const validateToken = async (req: Request, res: Response) => {
 
     const decoded = jwt.verify(token, SECRET!);
 
-    const query = "SELECT * FROM users u WHERE u.email = $1;";
+    const query = "SELECT * FROM usuarios u WHERE u.email = $1;";
     const user = await pool.query(query, [(decoded as JwtPayload).email]);
 
     if (user.rowCount == 0) throw new Error("Usuário não encontrado!");
@@ -73,7 +73,7 @@ export const createToken = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
-    const query = "SELECT * FROM users u WHERE u.email = $1;";
+    const query = "SELECT * FROM usuarios u WHERE u.email = $1;";
     const user = await pool.query(query, [email]);
 
     if (user.rowCount == 0) throw new Error("Usuário não encontrado!");

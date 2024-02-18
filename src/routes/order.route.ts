@@ -8,7 +8,11 @@ import {
   deleteOrder,
 } from "../controllers/order.controller";
 
+import { auth } from "../middlewares/auth.middleware";
+
 export const orderRouter = express();
+
+orderRouter.use(auth)
 
 orderRouter
   .route("/get/:userId")
