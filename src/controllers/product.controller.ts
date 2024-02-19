@@ -6,7 +6,7 @@ import path from 'path';
 
 export const createProduct = async (req: Request, res: Response) => {
   try {
-    const { name, description, price } = req.body;
+    const { name, description, price } = req.body as Product;
     const imageUrl = req.file ? req.file.path : '';
     
     if (!name || !description || !price) {
@@ -54,7 +54,7 @@ export const getProductById = async (req: Request, res: Response) => {
 export const updateProduct = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, price } = req.body;
+    const { name, description, price } = req.body as Product;
 
     const query = 'UPDATE produtos SET nome = $1, descricao = $2, preco = $3 WHERE id = $4 RETURNING *';
     const values = [name, description, price, id];
