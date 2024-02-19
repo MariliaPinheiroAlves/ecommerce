@@ -7,21 +7,25 @@ import path from 'path';
 export const createProduct = async (req: Request, res: Response) => {
   try {
     const { name, description, price } = req.body as Product;
-    const imageUrl = req.file ? req.file.path : '';
+    const imagem = req.file ? req.file.path.replace('\\', '/') : '';
     
+    const extensionsAccepted = ['.jpg', '.jpeg', '.png']
+    const currentExtension = path.extname(imagem)
+
+    if (!extensionsAccepted.includes(currentExtension)) return res.status(409).json({message: 'Apenas imagens .png, .jpg ou .jpeg são aceitas!'})
+
     if (!name || !description || !price) {
       return res.status(400).json({ message: 'Todos os campos nao foram preenchidos' });
     }
 
-    const query = 'INSERT INTO produtos (nome, descricao, preco, imagemUrl) VALUES ($1, $2, $3, $4) RETURNING *';
-    const values = [name, description, price, imageUrl];
+     const query = 'INSERT INTO produtos (nome, descricao, preco, imagem) VALUES ($1, $2, $3, $4) RETURNING *';
+    const values = [name, description, price, imagem];
     const result = await pool.query(query, values);
 
 
     return res.status(201).json(result.rows[0]);
 
   } catch (error) {
-    console.error('Erro ao criar produto', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
@@ -31,7 +35,6 @@ export const getAllProducts = async (req: Request, res: Response) => {
     const result = await pool.query('SELECT * FROM produtos');
     return res.status(200).json(result.rows);
   } catch (error) {
-    console.error('Erro ao obter produto', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
@@ -85,8 +88,8 @@ export const deleteProduct = async (req: Request, res: Response) => {
 
     const product = result.rows[0];
 
-    if (product.imagemUrl) {
-      fs.unlinkSync(path.join(__dirname, '..', product.imagemUrl));
+    if (product.imagem) {
+      fs.unlinkSync(path.join(__dirname, '..', product.imagem));
     }
 
     return res.status(204).send();
@@ -99,15 +102,15 @@ export const deleteProduct = async (req: Request, res: Response) => {
 export const downloadImage = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const query = 'SELECT imageUrl FROM products WHERE id = $1';
+    const query = 'SELECT imagem FROM products WHERE id = $1';
     const result = await pool.query(query, [id]);
 
-    if (result.rows.length === 0 || !result.rows[0].imageUrl) {
+    if (result.rows.length === 0 || !result.rows[0].imagem) {
         return res.status(404).json({ message: 'Erro, imagem não encontrada' });
       }
-    const imageUrl = result.rows[0].imagemUrl;
+    const imagem = result.rows[0].imagem;
 
-    const imagePath = path.join(__dirname, '..', imageUrl);
+    const imagePath = path.join(__dirname, '..', imagem);
     return res.status(200).download(imagePath);
   } catch (error) {
     console.error('Erro ao carregar arquivo', error);
