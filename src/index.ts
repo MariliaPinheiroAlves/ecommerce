@@ -1,6 +1,10 @@
 import express, { Response, Express } from "express";
-import dotenv from "dotenv";
+import cors from "cors";
+
+import { CustomCors } from "./middlewares/customCors";
 import { routes } from "./routes/routes";
+
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -9,8 +13,9 @@ const main = () => {
   const PORT = process.env.PORT;
 
   app.use(express.json());
-  app.use("/images", express.static("./images"));
-  
+  app.use(cors());
+  app.use(CustomCors);
+
   app.listen(PORT, () =>
     console.log(`Server running at http://localhost:${PORT}/`)
   );
