@@ -73,7 +73,7 @@ export const createUser = async (req: Request, res: Response) => {
 
     res.status(201).json({ ...user });
   } catch (error: any) {
-    return res.status(500).json({ mensagem: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -90,7 +90,7 @@ export const getUserByUsername = async (req: Request, res: Response) => {
 
     res.json({ ...user });
   } catch (error: any) {
-    return res.status(500).json({ mensagem: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -109,13 +109,16 @@ export const validateToken = async (req: Request, res: Response) => {
 
     res.status(200).json({ ...user });
   } catch (error: any) {
-    return res.status(500).json({ mensagem: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
 export const createToken = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body as { email: string; password: string };
+    const { email, password } = req.body as {
+      email: string;
+      password: string;
+    };
 
     const query = "SELECT * FROM usuarios u WHERE u.email = $1;";
     const response = await pool.query(query, [email]);
@@ -146,6 +149,6 @@ export const createToken = async (req: Request, res: Response) => {
 
     res.status(200).json({ token });
   } catch (error: any) {
-    return res.status(500).json({ mensagem: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
