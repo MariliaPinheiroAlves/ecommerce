@@ -13,15 +13,28 @@ dotenv.config();
 
 const SECRET: string = process.env.SECRET as string;
 
-const securityFieldsUser = (response: QueryResult<User>): User => {
+const securityFieldsUser = (response: User): User => {
   const user: User = {
-    id_usuario: response.rows[0].id_usuario,
-    username: response.rows[0].username,
-    nome: response.rows[0].nome,
-    email: response.rows[0].email,
+    id_usuario: response.id_usuario,
+    username: response.username,
+    nome: response.nome,
+    email: response.email,
   };
 
   return user;
+};
+
+export const getAll = async (req: Request, res: Response) => {
+  try {
+    const query = "SELECT * FROM usuarios;";
+    const response = await pool.query(query);
+
+    const users = response.rows.map((user) => securityFieldsUser(user));
+
+    res.json([...users]);
+  } catch (error: any) {
+    return res.status(500).json({ message: error.message });
+  }
 };
 
 export const createUser = async (req: Request, res: Response) => {
@@ -69,7 +82,7 @@ export const createUser = async (req: Request, res: Response) => {
       passwordHash,
     ]);
 
-    const user: User = securityFieldsUser(response);
+    const user: User = securityFieldsUser(response.rows[0]);
 
     res.status(201).json({ ...user });
   } catch (error: any) {
@@ -86,7 +99,7 @@ export const getUserByUsername = async (req: Request, res: Response) => {
 
     if (!!!response.rowCount) throw new Error("Usuário não encontrado!");
 
-    const user: User = securityFieldsUser(response);
+    const user: User = securityFieldsUser(response.rows[0]);
 
     res.json({ ...user });
   } catch (error: any) {
@@ -105,7 +118,7 @@ export const validateToken = async (req: Request, res: Response) => {
 
     if (!!!response.rowCount) throw new Error("Usuário não encontrado!");
 
-    const user: User = securityFieldsUser(response);
+    const user: User = securityFieldsUser(response.rows[0]);
 
     res.status(200).json({ ...user });
   } catch (error: any) {
