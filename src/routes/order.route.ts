@@ -3,12 +3,17 @@ import express from "express";
 import { Request, Response } from "express";
 import { Order } from '../models/order';
 import {
+  getAllOrders,
   getAllOrdersByUserID,
   createNewOrder,
   deleteOrder,
 } from "../controllers/order.controller";
 
 export const orderRouter = express();
+
+orderRouter
+  .route("/")
+  .get((req: Request<{ userId: string }>, res: Response<any>) => getAllOrders(req, res))
 
 orderRouter
   .route("/get/:userId")
@@ -21,5 +26,3 @@ orderRouter
 orderRouter
   .route("/add")
   .post((req: Request<{}, {}, Order>, res: Response<any>) => createNewOrder(req, res));
-
-

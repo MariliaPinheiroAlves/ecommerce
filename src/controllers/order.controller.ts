@@ -2,6 +2,15 @@ import { Request, Response } from 'express';
 import { pool } from '../config/connection';
 import { Order } from '../models/order';
 
+export const getAllOrders = async (req: Request, res: Response) => {
+  try {
+    const result = await pool.query("SELECT * FROM pedidos p ORDER BY p.id");
+    return res.status(200).json(result.rows);
+  } catch (error) {
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 export const getAllOrdersByUserID = async (req: Request<{ userId: string }>, res: Response<any>) => {
   const userId :string = req.params.userId;
 
