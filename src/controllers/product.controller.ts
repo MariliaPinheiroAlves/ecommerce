@@ -18,7 +18,9 @@ export const createProduct = async (req: Request, res: Response) => {
       });
 
     if (!name || !description || !price) {
-      return res.status(400).json({ message: "Todos os campos nao foram preenchidos" });
+      return res
+        .status(400)
+        .json({ message: "Todos os campos nao foram preenchidos" });
     }
 
     const query =
@@ -35,7 +37,9 @@ export const createProduct = async (req: Request, res: Response) => {
 
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
-    const result = await pool.query("SELECT * FROM produtos p ORDER BY p.id_produto");
+    const result = await pool.query(
+      "SELECT * FROM produtos p ORDER BY p.id_produto"
+    );
     return res.status(200).json(result.rows);
   } catch (error) {
     return res.status(500).json({ message: "Internal server error" });
@@ -45,7 +49,10 @@ export const getAllProducts = async (req: Request, res: Response) => {
 export const getProductById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const result = await pool.query("SELECT * FROM produtos where id_produto = $1", [id]);
+    const result = await pool.query(
+      "SELECT * FROM produtos where id_produto = $1",
+      [id]
+    );
 
     if (!result) {
       return res.status(404).json({ message: "Produto nao encontrado" });
@@ -72,7 +79,7 @@ export const updateProduct = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Produto nao encontrado" });
     }
 
-    return res.status(200).json({ mensagem: "Produto atualizado com sucesso" });
+    return res.status(200).json({ message: "Produto atualizado com sucesso" });
   } catch (error) {
     console.error("Erro ao atualizar produto", error);
     return res.status(500).json({ message: "Internal server error" });
